@@ -1,0 +1,2161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AdCopy — Google Ads Text Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --border: #e8e6e0;
+    --text: #1a1916;
+    --muted: #8a8780;
+    --accent: #2563eb;
+    --accent-light: #eff4ff;
+    --success: #16a34a;
+    --success-light: #f0fdf4;
+    --warning: #d97706;
+    --danger: #dc2626;
+    --tag-bg: #f0f0ed;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Sora', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: -0.3px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .logo-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+
+  .badge {
+    font-size: 11px;
+    font-weight: 500;
+    background: var(--accent-light);
+    color: var(--accent);
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  .page-title {
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    margin-bottom: 4px;
+  }
+
+  .page-sub {
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 36px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+
+  .card-title {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .step-num {
+    width: 20px;
+    height: 20px;
+    background: var(--text);
+    color: white;
+    border-radius: 50%;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+  }
+
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+
+  input[type="text"], input[type="url"], textarea {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: 'Sora', sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--bg);
+    transition: border-color 0.15s, box-shadow 0.15s;
+    outline: none;
+  }
+
+  input[type="text"]:focus, input[type="url"]:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+    background: white;
+  }
+
+  textarea { resize: vertical; min-height: 80px; }
+
+  .usp-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+
+  .usp-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--tag-bg);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    animation: fadeIn 0.2s ease;
+  }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+  .usp-remove {
+    margin-left: auto;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 16px;
+    line-height: 1;
+    padding: 0 2px;
+    transition: color 0.15s;
+  }
+  .usp-remove:hover { color: var(--danger); }
+
+  .add-usp-row { display: flex; gap: 8px; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 18px;
+    border-radius: 8px;
+    font-family: 'Sora', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+  }
+  .btn-primary:hover:not(:disabled) { background: #1d4ed8; }
+
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .btn-ghost:hover { background: var(--tag-bg); }
+
+  .btn-success {
+    background: var(--success);
+    color: white;
+  }
+  .btn-success:hover:not(:disabled) { background: #15803d; }
+
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  .btn-lg { padding: 12px 28px; font-size: 14px; width: 100%; justify-content: center; }
+
+  .campaign-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--tag-bg);
+    border-radius: 8px;
+    padding: 3px;
+    margin-bottom: 20px;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 7px 14px;
+    border: none;
+    border-radius: 6px;
+    font-family: 'Sora', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    background: transparent;
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+
+  .tab.active {
+    background: white;
+    color: var(--text);
+    box-shadow: var(--shadow);
+  }
+
+  .results-section { display: none; }
+  .results-section.visible { display: block; }
+
+  .ad-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  @media (max-width: 640px) { .ad-grid { grid-template-columns: 1fr; } }
+
+  .ad-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    background: var(--bg);
+    position: relative;
+  }
+
+  .ad-card-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .char-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--border);
+    color: var(--muted);
+  }
+
+  .char-count.over { background: #fef2f2; color: var(--danger); }
+  .char-count.ok { background: var(--success-light); color: var(--success); }
+
+  .field-group { margin-bottom: 10px; }
+
+  .field-label {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 3px;
+    font-weight: 500;
+  }
+
+  .editable-field {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-family: 'Sora', sans-serif;
+    font-size: 12px;
+    background: white;
+    width: 100%;
+    outline: none;
+    color: var(--text);
+    transition: border-color 0.15s;
+  }
+
+  .editable-field:focus { border-color: var(--accent); }
+
+  .loading-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(247,246,243,0.85);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .loading-overlay.active { display: flex; }
+
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .loading-step {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .error-msg {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: var(--danger);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    margin-bottom: 16px;
+    display: none;
+  }
+
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 20px 0;
+  }
+
+  .export-bar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .pmax-grid { display: flex; flex-direction: column; gap: 12px; }
+
+  .pmax-field {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    background: var(--bg);
+  }
+
+  .pmax-field-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  .pmax-field-name {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--muted);
+  }
+
+  .items-list { display: flex; flex-direction: column; gap: 4px; }
+
+  .pmax-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .pmax-input {
+    flex: 1;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    padding: 5px 8px;
+    font-family: 'Sora', sans-serif;
+    font-size: 12px;
+    background: white;
+    outline: none;
+    color: var(--text);
+    transition: border-color 0.15s;
+  }
+
+  .pmax-input:focus { border-color: var(--accent); }
+
+  .hint {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .url-row { display: flex; gap: 8px; }
+  .url-row input { flex: 1; }
+
+  /* ── Ad Preview ── */
+  .preview-section {
+    margin-bottom: 16px;
+  }
+
+  .preview-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+
+  .preview-tab {
+    padding: 5px 14px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-family: 'Sora', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    background: transparent;
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+
+  .preview-tab.active {
+    background: var(--text);
+    color: white;
+    border-color: var(--text);
+  }
+
+  .google-preview {
+    background: white;
+    border: 1px solid #dfe1e5;
+    border-radius: 12px;
+    padding: 20px 24px;
+    font-family: Arial, sans-serif;
+    max-width: 600px;
+  }
+
+  .gp-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+
+  .gp-favicon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--muted);
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .gp-favicon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+  }
+
+  .gp-domain-block { display: flex; flex-direction: column; gap: 0px; }
+
+  .gp-domain {
+    font-size: 14px;
+    color: #202124;
+    font-weight: 400;
+    line-height: 1.3;
+  }
+
+  .gp-url {
+    font-size: 12px;
+    color: #4d5156;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 420px;
+  }
+
+  .gp-sponsored {
+    font-size: 11px;
+    color: #70757a;
+    border: 1px solid #70757a;
+    border-radius: 3px;
+    padding: 1px 4px;
+    margin-left: auto;
+    align-self: center;
+    flex-shrink: 0;
+    font-family: Arial, sans-serif;
+  }
+
+  .gp-headline {
+    font-size: 20px;
+    color: #1a0dab;
+    font-weight: 400;
+    line-height: 1.3;
+    margin: 6px 0 2px;
+    cursor: pointer;
+    font-family: Arial, sans-serif;
+  }
+
+  .gp-headline:hover { text-decoration: underline; }
+
+  .gp-description {
+    font-size: 14px;
+    color: #4d5156;
+    line-height: 1.5;
+    font-family: Arial, sans-serif;
+  }
+
+  .preview-hint {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 10px;
+    font-family: 'Sora', sans-serif;
+  }
+
+  .preview-shuffle {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 10px;
+    font-size: 11px;
+    color: var(--accent);
+    cursor: pointer;
+    font-family: 'Sora', sans-serif;
+    font-weight: 500;
+    background: none;
+    border: none;
+    padding: 0;
+  }
+
+  .preview-shuffle:hover { text-decoration: underline; }
+
+  /* ── Client Review View ── */
+  .cr-section {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 16px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+
+  .cr-section-header {
+    padding: 14px 20px;
+    background: var(--tag-bg);
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .cr-row {
+    display: grid;
+    grid-template-columns: 140px 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+
+  .cr-row:last-child { border-bottom: none; }
+  .cr-row.approved { background: #f0fdf4; }
+
+  .cr-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
+
+  .cr-input {
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-family: 'Sora', sans-serif;
+    font-size: 13px;
+    background: transparent;
+    width: 100%;
+    outline: none;
+    color: var(--text);
+    transition: border-color 0.15s, background 0.15s;
+  }
+
+  .cr-input:focus {
+    border-color: var(--accent);
+    background: white;
+  }
+
+  .cr-approve-btn {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 14px;
+    font-family: 'Sora', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    background: white;
+    color: var(--muted);
+    white-space: nowrap;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  .cr-approve-btn:hover { border-color: var(--success); color: var(--success); }
+
+  .cr-approve-btn.approved {
+    background: var(--success);
+    border-color: var(--success);
+    color: white;
+  }
+
+  .cr-char {
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    margin-left: 4px;
+    flex-shrink: 0;
+  }
+
+  .cr-char.over { color: var(--danger); }
+
+  @media (max-width: 600px) {
+    .cr-row { grid-template-columns: 100px 1fr; }
+    .cr-approve-btn { grid-column: 2; justify-self: start; }
+  }
+
+  .copied-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--text);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 400;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+  }
+
+  .copied-toast.show { opacity: 1; }
+
+  /* ── PMAX Display Preview ── */
+  .pmax-display-card {
+    border-radius: 12px;
+    overflow: hidden;
+    max-width: 360px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+    font-family: Arial, sans-serif;
+    background: white;
+  }
+
+  .pmax-display-img {
+    width: 100%;
+    height: 180px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    color: rgba(255,255,255,0.7);
+    font-family: 'Sora', sans-serif;
+  }
+
+  .pmax-display-body {
+    padding: 14px 16px 16px;
+  }
+
+  .pmax-display-bizname {
+    font-size: 11px;
+    color: #70757a;
+    margin-bottom: 4px;
+  }
+
+  .pmax-display-headline {
+    font-size: 17px;
+    font-weight: 700;
+    color: #202124;
+    line-height: 1.3;
+    margin-bottom: 6px;
+  }
+
+  .pmax-display-desc {
+    font-size: 13px;
+    color: #4d5156;
+    line-height: 1.4;
+    margin-bottom: 12px;
+  }
+
+  .pmax-display-cta {
+    display: inline-block;
+    background: #1a73e8;
+    color: white;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 8px 20px;
+    border-radius: 4px;
+  }
+
+  .pmax-display-sponsored {
+    font-size: 10px;
+    color: #70757a;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    AdCopy
+  </div>
+  <span class="badge">Google Ads Editor Export</span>
+</header>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text">Generating ad copy…</div>
+  <div class="loading-step" id="loadingStep">Analyzing landing page</div>
+</div>
+
+<main>
+  <h1 class="page-title">Google Ads Copy Generator</h1>
+  <p class="page-sub">Paste your landing page URL, add USPs, and generate ready-to-upload ad texts for Search & PMAX.</p>
+
+  <!-- Step 1: URL -->
+  <div class="card">
+    <div class="card-title">
+      <div class="step-num">1</div>
+      Landing Page
+    </div>
+    <label>Landing page URL</label>
+    <div class="url-row">
+      <input type="url" id="landingUrl" placeholder="https://yoursite.com/page" />
+    </div>
+    <p class="hint" style="margin-top:8px;">We'll extract the content to inform the ad copy.</p>
+
+    <hr class="divider">
+
+    <label style="margin-top:4px;">Additional context <span style="color:var(--muted);font-weight:400;">(optional)</span></label>
+    <textarea id="extraContext" placeholder="Describe your product, target audience, tone of voice, or anything else you'd like the AI to consider…" rows="3"></textarea>
+  </div>
+
+  <!-- Step 2: USPs -->
+  <div class="card">
+    <div class="card-title">
+      <div class="step-num">2</div>
+      Unique Selling Points
+    </div>
+    <div class="usp-list" id="uspList"></div>
+    <div class="add-usp-row">
+      <input type="text" id="uspInput" placeholder="e.g. Free shipping over €50, 30-day returns…" />
+      <button class="btn btn-ghost" id="addUspBtn">+ Add</button>
+    </div>
+    <p class="hint" style="margin-top:8px;">USPs will be woven into headlines and descriptions.</p>
+  </div>
+
+  <!-- Step 3: Campaign type -->
+  <div class="card">
+    <div class="card-title">
+      <div class="step-num">3</div>
+      Campaign Type
+    </div>
+    <div class="campaign-tabs">
+      <button class="tab active" id="tabSearch" id="tabSearch">Search Ads</button>
+      <button class="tab" id="tabPmax" id="tabPmax">PMAX</button>
+      <button class="tab" id="tabBoth" id="tabBoth">Both</button>
+    </div>
+
+    <div id="apiKeyRow">
+      <label>Anthropic API Key</label>
+      <input type="text" id="apiKey" placeholder="sk-ant-…" />
+      <p class="hint" style="margin-top:4px;">Your key is never stored — used only for this session. Get one at <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent);">console.anthropic.com</a></p>
+    </div>
+
+    <hr class="divider">
+
+    <label style="margin-bottom:6px;">Number of ad variations
+      <span style="color:var(--muted);font-weight:400;">(Search only — each variation is a full RSA with 15 headlines &amp; 4 descriptions)</span>
+    </label>
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px;">
+      <button class="btn btn-ghost" style="padding:6px 12px;font-size:18px;line-height:1;" id="varMinus">−</button>
+      <input type="number" id="variationsCount" value="1" min="1" max="5"
+        style="width:64px;text-align:center;font-size:16px;font-weight:600;padding:7px 10px;" />
+      <button class="btn btn-ghost" style="padding:6px 12px;font-size:18px;line-height:1;" id="varPlus">+</button>
+      <span class="hint" style="margin:0;">Max 5 variations per generation</span>
+    </div>
+
+    <hr class="divider">
+
+    <button class="btn btn-primary btn-lg" id="generateBtn">
+      ✦ Generate Ad Copy
+    </button>
+  </div>
+
+  <!-- Error -->
+  <div class="error-msg" id="errorMsg"></div>
+
+  <!-- Results -->
+  <div class="results-section" id="resultsSection">
+    <div class="card">
+      <div class="card-title">Results</div>
+
+      <!-- Search Ads -->
+      <div id="searchResults"></div>
+
+      <!-- Ad Preview -->
+      <div id="adPreviewSection" style="display:none;">
+        <hr class="divider">
+        <div class="card-title" style="margin-bottom:12px;">
+          <div class="step-num" style="background:#34a853;">▶</div>
+          Ad Preview
+        </div>
+        <div class="preview-section">
+          <div class="preview-tabs" id="previewTabs"></div>
+          <div class="google-preview" id="googlePreview"></div>
+          <button class="preview-shuffle" id="shuffleBtn">⟳ Shuffle headlines</button>
+          <p class="preview-hint">Google rotates 3 headlines and 2 descriptions. This shows one combination.</p>
+        </div>
+      </div>
+
+      <!-- PMAX -->
+      <div id="pmaxResults"></div>
+
+      <!-- PMAX Preview -->
+      <div id="pmaxPreviewSection" style="display:none;">
+        <hr class="divider">
+        <div class="card-title" style="margin-bottom:12px;">
+          <div class="step-num" style="background:#7c3aed;">▶</div>
+          PMAX Ad Preview
+        </div>
+        <div class="preview-section">
+          <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;align-items:center;">
+            <button class="preview-tab active" id="pmaxFormatSearch">Search</button>
+            <button class="preview-tab" id="pmaxFormatDisplay">Display</button>
+            <button class="preview-shuffle" id="pmaxShuffleBtn" style="margin-left:auto;">⟳ Shuffle combination</button>
+          </div>
+          <div id="pmaxGooglePreview"></div>
+          <div id="pmaxDisplayPreview" style="display:none;"></div>
+          <p class="preview-hint" id="pmaxPreviewHint">PMAX in Search: 1 long headline + 1 description. Google picks the best combination.</p>
+        </div>
+      </div>
+
+      <hr class="divider">
+      <div class="export-bar">
+        <button class="btn btn-ghost" id="regenerateBtn">↺ Regenerate</button>
+        <button class="btn btn-success" id="exportBtn">
+          ↓ Export for Google Ads Editor (.xlsx)
+        </button>
+        <button class="btn btn-ghost" id="exportClientBtn" style="border-color:#7c3aed;color:#7c3aed;">
+          ↓ Export Client Review (.xlsx)
+        </button>
+        <button class="btn btn-ghost" id="shareBtn" style="border-color:#059669;color:#059669;">
+          ↗ Share with Client
+        </button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Share Modal -->
+<div id="shareModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:300;align-items:center;justify-content:center;">
+  <div style="background:white;border-radius:16px;padding:32px;max-width:520px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+    <div style="font-size:16px;font-weight:600;margin-bottom:6px;">Share with client</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:20px;">Send this link to your client. They can review and edit each line, then approve individual items. You'll see their approvals when they send the link back.</p>
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <input id="shareLinkInput" type="text" readonly style="flex:1;font-size:12px;font-family:'JetBrains Mono',monospace;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);outline:none;" />
+      <button class="btn btn-primary" id="copyLinkBtn">Copy</button>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;">
+      <button class="btn btn-ghost" id="closeModalBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Client Review View (shown when ?review= param present) -->
+<div id="clientReviewView" style="display:none;">
+  <div style="max-width:860px;margin:0 auto;padding:40px 24px 80px;">
+    <div style="margin-bottom:32px;">
+      <h1 style="font-size:22px;font-weight:600;letter-spacing:-0.4px;margin-bottom:4px;">Ad Copy Review</h1>
+      <p style="font-size:13px;color:var(--muted);">Review each line, edit if needed, then click <strong>Approve</strong> to mark it as final. When done, use the button at the bottom to generate your approval link.</p>
+    </div>
+
+    <!-- Ad Previews for client -->
+    <div id="crPreviewSection" style="display:none;margin-bottom:24px;">
+      <div class="card">
+        <div class="card-title" style="margin-bottom:14px;">
+          <div class="step-num" style="background:#2563eb;">👁</div>
+          Ad Preview
+        </div>
+        <!-- Search preview -->
+        <div id="crSearchPreviewWrap" style="display:none;">
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.7px;color:var(--muted);margin-bottom:8px;">Search Ad</div>
+          <div class="preview-section">
+            <div class="preview-tabs" id="crPreviewTabs"></div>
+            <div class="google-preview" id="crGooglePreview"></div>
+            <button class="preview-shuffle" id="crShuffleBtn">⟳ Shuffle headlines</button>
+            <p class="preview-hint">Google rotates headlines and descriptions. This shows one combination.</p>
+          </div>
+        </div>
+        <!-- PMAX preview -->
+        <div id="crPmaxPreviewWrap" style="display:none;margin-top:20px;">
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.7px;color:var(--muted);margin-bottom:8px;">PMAX Asset Group</div>
+          <div class="preview-section">
+            <div class="preview-tabs" id="crPmaxFormatTabs">
+              <button class="preview-tab active" id="crPmaxFmtSearch">Search</button>
+              <button class="preview-tab" id="crPmaxFmtDisplay">Display</button>
+              <button class="preview-shuffle" id="crPmaxShuffleBtn" style="margin-left:auto;">⟳ Shuffle combination</button>
+            </div>
+            <div id="crPmaxGooglePreview"></div>
+            <div id="crPmaxDisplayPreview" style="display:none;"></div>
+            <p class="preview-hint" id="crPmaxPreviewHint"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="clientReviewContent"></div>
+
+    <!-- Export buttons for client -->
+    <div class="card" style="margin-top:24px;">
+      <div class="card-title" style="margin-bottom:14px;">
+        <div class="step-num" style="background:#16a34a;">↓</div>
+        Download
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-success" id="crExportAdsBtn" onclick="exportExcel()">
+          ↓ Download for Google Ads Editor (.xlsx)
+        </button>
+        <button class="btn btn-ghost" id="crExportClientBtn" onclick="exportClientReview()">
+          ↓ Download Client Review (.xlsx)
+        </button>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;padding:20px;background:white;border:1px solid var(--border);border-radius:12px;">
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px;">Approval progress</div>
+      <div id="approvalProgress" style="font-size:13px;color:var(--muted);margin-bottom:16px;"></div>
+      <button class="btn btn-success" id="sendApprovalBtn" style="width:100%;justify-content:center;">
+        ✓ Generate approval link to send back
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentTab = 'search';
+let generatedData = null;
+const usps = [];
+
+function changeVariations(delta) {
+  const el = document.getElementById('variationsCount');
+  const val = Math.min(5, Math.max(1, parseInt(el.value || 1) + delta));
+  el.value = val;
+}
+
+function setTab(t) {
+  currentTab = t;
+  ['search','pmax','both'].forEach(x => {
+    document.getElementById('tab' + x.charAt(0).toUpperCase() + x.slice(1)).classList.toggle('active', x === t);
+  });
+}
+
+document.getElementById('uspInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addUsp();
+});
+
+function addUsp() {
+  const input = document.getElementById('uspInput');
+  const val = input.value.trim();
+  if (!val) return;
+  usps.push(val);
+  input.value = '';
+  renderUsps();
+}
+
+function removeUsp(i) {
+  usps.splice(i, 1);
+  renderUsps();
+}
+
+function renderUsps() {
+  const list = document.getElementById('uspList');
+  list.innerHTML = usps.map((u, i) => `
+    <div class="usp-item">
+      <span>✦</span>
+      <span>${escHtml(u)}</span>
+      <button class="usp-remove" onclick="window.removeUsp(${i})">×</button>
+    </div>
+  `).join('');
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.style.display = msg ? 'block' : 'none';
+}
+
+function setLoading(on, step = '') {
+  document.getElementById('loadingOverlay').classList.toggle('active', on);
+  document.getElementById('loadingStep').textContent = step;
+  document.getElementById('generateBtn').disabled = on;
+}
+
+async function generate() {
+  const url = document.getElementById('landingUrl').value.trim();
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const context = document.getElementById('extraContext').value.trim();
+
+  if (!url) { showError('Please enter a landing page URL.'); return; }
+  if (!apiKey) { showError('Please enter your Anthropic API key.'); return; }
+
+  showError('');
+  setLoading(true, 'Building prompt…');
+
+  const uspText = usps.length ? '\n\nUnique Selling Points:\n' + usps.map(u => `- ${u}`).join('\n') : '';
+  const contextText = context ? `\n\nAdditional context from user:\n${context}` : '';
+
+  const needSearch = currentTab === 'search' || currentTab === 'both';
+  const needPmax = currentTab === 'pmax' || currentTab === 'both';
+  const numVariations = Math.min(5, Math.max(1, parseInt(document.getElementById('variationsCount').value || 1)));
+
+  // Build prompt sections without nested backticks
+  const searchAdTemplate = '{"headline1":"...","headline2":"...","headline3":"...","headline4":"...","headline5":"...","headline6":"...","headline7":"...","headline8":"...","headline9":"...","headline10":"...","headline11":"...","headline12":"...","headline13":"...","headline14":"...","headline15":"...","description1":"...","description2":"...","description3":"...","description4":"..."}';
+  const searchAdsArray = '[' + Array.from({length: numVariations}, () => searchAdTemplate).join(',') + ']';
+  const variationWord = numVariations > 1 ? 's' : '';
+
+  const searchInstructions = needSearch
+    ? 'Generate EXACTLY ' + numVariations + ' Search Ad variation' + variationWord + ' (RSA). Each variation must have:\n- EXACTLY 15 headlines (max 30 chars each)\n- EXACTLY 4 descriptions (max 90 chars each)\n- Make each variation distinct — different angles, messaging, and CTAs'
+    : '';
+
+  const pmaxInstructions = needPmax
+    ? 'Generate 1 PMAX Asset Group with:\n- EXACTLY 15 short headlines (max 30 chars each)\n- EXACTLY 5 long headlines (max 90 chars each)\n- EXACTLY 5 descriptions (max 90 chars each)\n- 1 business name (max 25 chars)'
+    : '';
+
+  const searchJsonExample = needSearch
+    ? '"searchAds": ' + searchAdsArray
+    : '"searchAds": []';
+
+  const pmaxJsonExample = needPmax
+    ? '"pmax": {"shortHeadlines":["...x15"],"longHeadlines":["...","...","...","...","..."],"descriptions":["...","...","...","...","..."],"businessName":"..."}'
+    : '"pmax": null';
+
+  const prompt = 'You are an expert Google Ads copywriter. Based on the landing page URL and information below, generate high-converting ad copy.\n\n'
+    + 'Landing page URL: ' + url + uspText + contextText + '\n\n'
+    + 'IMPORTANT RULES:\n'
+    + '- Headlines max 30 characters each (count carefully)\n'
+    + '- Descriptions max 90 characters each (count carefully)\n'
+    + '- PMAX short headlines max 30 chars, long headlines max 90 chars, descriptions max 90 chars\n'
+    + '- Include USPs naturally\n'
+    + '- Use power words, clear CTAs\n'
+    + '- Vary the angles across variations (benefit, urgency, social proof, feature)\n'
+    + '- CAPITALISATION: Only capitalise the very first word of each headline or description, and proper nouns. Do NOT use Title Case. Example correct: "Free shipping on all orders"\n\n'
+    + searchInstructions + (searchInstructions ? '\n\n' : '')
+    + pmaxInstructions + (pmaxInstructions ? '\n\n' : '')
+    + 'Respond ONLY with valid JSON. No markdown, no explanation. Use this exact structure:\n'
+    + '{\n'
+    + '  ' + searchJsonExample + ',\n'
+    + '  ' + pmaxJsonExample + '\n'
+    + '}';
+
+  try {
+    setLoading(true, 'Calling Claude API…');
+
+    // 👇 Replace with your Cloudflare Worker URL after setup
+    const PROXY_URL = 'https://anthropic-proxy.davburia.workers.dev';
+
+    const resp = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json();
+      throw new Error(err.error?.message || `API error ${resp.status}`);
+    }
+
+    const data = await resp.json();
+    const raw = data.content.map(b => b.text || '').join('');
+    const clean = raw.replace(/```json|```/g, '').trim();
+    generatedData = JSON.parse(clean);
+
+    // Fix stray Title Case -> Sentence case
+    function fixCapsTitle(str) {
+      if (!str) return str;
+      return str.replace(/\b([A-Z][a-z]{1,})/g, function(word, _, offset, orig) {
+        // Keep if it's the first word of the whole string
+        if (orig.trimStart().indexOf(word) === 0) return word;
+        // Keep if preceded by sentence-ending punctuation (. ! ?)
+        const before = orig.slice(0, offset).trimEnd();
+        if (/[.!?]$/.test(before)) return word;
+        // Otherwise lowercase it (title case mid-sentence)
+        return word.toLowerCase();
+      });
+    }
+    function applyFixToObj(obj) {
+      if (!obj) return obj;
+      const fixed = {};
+      for (const [k, v] of Object.entries(obj)) {
+        if (typeof v === 'string') fixed[k] = fixCapsTitle(v);
+        else if (Array.isArray(v)) fixed[k] = v.map(x => typeof x === 'string' ? fixCapsTitle(x) : x);
+        else fixed[k] = v;
+      }
+      return fixed;
+    }
+    if (generatedData.searchAds) generatedData.searchAds = generatedData.searchAds.map(applyFixToObj);
+    if (generatedData.pmax) generatedData.pmax = applyFixToObj(generatedData.pmax);
+
+    setLoading(true, 'Rendering results…');
+    renderResults(generatedData, url);
+    renderPreview();
+    renderPmaxPreview();
+    setLoading(false);
+    document.getElementById('resultsSection').classList.add('visible');
+    document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  } catch (e) {
+    setLoading(false);
+    showError('Error: ' + e.message);
+  }
+}
+
+function charCountBadge(str, max) {
+  const n = (str || '').length;
+  const cls = n > max ? 'over' : 'ok';
+  return `<span class="char-count ${cls}">${n}/${max}</span>`;
+}
+
+function renderResults(data, url) {
+  // Search
+  const sr = document.getElementById('searchResults');
+  if (data.searchAds && data.searchAds.length) {
+    sr.innerHTML = `
+      <div class="card-title" style="margin-bottom:14px;">
+        <div class="step-num" style="background:#2563eb;">S</div>
+        Search Ads (${data.searchAds.length})
+      </div>
+      <div class="ad-grid">
+        ${data.searchAds.map((ad, i) => `
+          <div class="ad-card">
+            <div class="ad-card-label">Ad ${i+1}</div>
+            ${['headline1','headline2','headline3','headline4','headline5','headline6','headline7','headline8','headline9','headline10','headline11','headline12','headline13','headline14','headline15'].map(k => `
+              <div class="field-group">
+                <div class="field-label">${k.replace('headline','Headline ')} ${charCountBadge(ad[k], 30)}</div>
+                <input class="editable-field" data-ad="${i}" data-key="${k}" value="${escHtml(ad[k] || '')}" oninput="window.updateField(this)" maxlength="35" />
+              </div>
+            `).join('')}
+            ${['description1','description2','description3','description4'].map(k => `
+              <div class="field-group">
+                <div class="field-label">${k.replace('description','Desc ')} ${charCountBadge(ad[k], 90)}</div>
+                <input class="editable-field" data-ad="${i}" data-key="${k}" value="${escHtml(ad[k] || '')}" oninput="window.updateField(this)" maxlength="95" />
+              </div>
+            `).join('')}
+          </div>
+        `).join('')}
+      </div>`;
+    sr.style.display = '';
+  } else {
+    sr.innerHTML = '';
+  }
+
+  // PMAX
+  const pr = document.getElementById('pmaxResults');
+  if (data.pmax) {
+    const p = data.pmax;
+    pr.innerHTML = `
+      ${data.searchAds?.length ? '<hr class="divider">' : ''}
+      <div class="card-title" style="margin-bottom:14px;">
+        <div class="step-num" style="background:#7c3aed;">P</div>
+        PMAX Asset Group
+      </div>
+      <div class="pmax-grid">
+        ${pmaxFieldBlock('Short Headlines ×15 (30 chars each)', 'shortHeadlines', p.shortHeadlines, 30)}
+        ${pmaxFieldBlock('Long Headlines (90 chars)', 'longHeadlines', p.longHeadlines, 90)}
+        ${pmaxFieldBlock('Descriptions (90 chars)', 'descriptions', p.descriptions, 90)}
+        <div class="pmax-field">
+          <div class="pmax-field-header">
+            <span class="pmax-field-name">Business Name (25 chars)</span>
+            ${charCountBadge(p.businessName, 25)}
+          </div>
+          <input class="editable-field" data-pmax="businessName" value="${escHtml(p.businessName || '')}" oninput="window.updatePmax(this)" maxlength="30" style="font-size:13px;" />
+        </div>
+      </div>`;
+    pr.style.display = '';
+  } else {
+    pr.innerHTML = '';
+  }
+}
+
+// ── Preview logic ──
+let previewAdIndex = 0;
+let previewHeadlineOffset = 0;
+let previewDescOffset = 0;
+
+function renderPreview() {
+  const section = document.getElementById('adPreviewSection');
+  if (!generatedData || !generatedData.searchAds || !generatedData.searchAds.length) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = '';
+
+  const ads = generatedData.searchAds;
+
+  // Build variation tabs
+  const tabsEl = document.getElementById('previewTabs');
+  tabsEl.innerHTML = ads.map((_, i) =>
+    '<button class="preview-tab' + (i === previewAdIndex ? ' active' : '') + '" data-pidx="' + i + '">Variation ' + (i+1) + '</button>'
+  ).join('');
+  tabsEl.querySelectorAll('.preview-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      previewAdIndex = parseInt(btn.dataset.pidx);
+      previewHeadlineOffset = 0;
+      previewDescOffset = 0;
+      renderPreview();
+    });
+  });
+
+  drawGooglePreview(ads[previewAdIndex]);
+}
+
+function drawGooglePreview(ad) {
+  const url = document.getElementById('landingUrl').value.trim() || 'https://example.com';
+  let domain = '', path = '';
+  try {
+    const u = new URL(url);
+    domain = u.hostname.replace('www.','');
+    path = u.pathname !== '/' ? u.pathname : '';
+  } catch(e) { domain = url; }
+
+  // Pick 3 headlines rotating by offset
+  const hKeys = ['headline1','headline2','headline3','headline4','headline5','headline6',
+                 'headline7','headline8','headline9','headline10','headline11','headline12',
+                 'headline13','headline14','headline15'].filter(k => ad[k] && ad[k].trim());
+  const dKeys = ['description1','description2','description3','description4'].filter(k => ad[k] && ad[k].trim());
+
+  const h1 = hKeys[(previewHeadlineOffset) % hKeys.length];
+  const h2 = hKeys[(previewHeadlineOffset + 1) % hKeys.length];
+  const h3 = hKeys[(previewHeadlineOffset + 2) % hKeys.length];
+  const d1 = dKeys[(previewDescOffset) % dKeys.length];
+  const d2 = dKeys[(previewDescOffset + 1) % dKeys.length];
+
+  const headlineText = [ad[h1], ad[h2], ad[h3]].filter(Boolean).join(' | ');
+  const descText = [ad[d1], d2 !== d1 ? ad[d2] : ''].filter(Boolean).join(' ');
+
+  const faviconLetter = domain.charAt(0).toUpperCase();
+
+  document.getElementById('googlePreview').innerHTML =
+    '<div class="gp-top">' +
+      '<div class="gp-favicon" id="gpFavicon">' + faviconLetter + '</div>' +
+      '<div class="gp-domain-block">' +
+        '<div class="gp-domain">' + escHtml(domain) + '</div>' +
+        '<div class="gp-url">' + escHtml(url.replace(/^https?:\/\//, '')) + '</div>' +
+      '</div>' +
+      '<span class="gp-sponsored">Sponsored</span>' +
+    '</div>' +
+    '<div class="gp-headline">' + escHtml(headlineText) + '</div>' +
+    '<div class="gp-description">' + escHtml(descText) + '</div>';
+
+  // Try to load favicon
+  const img = new Image();
+  img.onload = function() {
+    const el = document.getElementById('gpFavicon');
+    if (el) el.innerHTML = '<img src="' + img.src + '" />';
+  };
+  img.src = 'https://www.google.com/s2/favicons?domain=' + domain + '&sz=32';
+}
+
+function shufflePreviewHeadlines() {
+  previewHeadlineOffset = (previewHeadlineOffset + 3) % 15;
+  previewDescOffset = (previewDescOffset + 1) % 4;
+  if (generatedData && generatedData.searchAds) {
+    drawGooglePreview(generatedData.searchAds[previewAdIndex]);
+  }
+}
+
+window.shufflePreviewHeadlines = shufflePreviewHeadlines;
+
+// ── PMAX Preview logic ──
+let pmaxFormat = 'search';   // 'search' | 'display'
+let pmaxLongOffset = 0;
+let pmaxDescOffset = 0;
+let pmaxShortOffset = 0;
+
+function renderPmaxPreview() {
+  const section = document.getElementById('pmaxPreviewSection');
+  if (!generatedData || !generatedData.pmax) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = '';
+  drawPmaxPreview();
+}
+
+function drawPmaxPreview() {
+  const p = generatedData.pmax;
+  const url = document.getElementById('landingUrl').value.trim() || 'https://example.com';
+  let domain = '';
+  try { domain = new URL(url).hostname.replace('www.', ''); } catch(e) { domain = url; }
+
+  const longHeadlines = (p.longHeadlines || []).filter(h => h && h.trim());
+  const shortHeadlines = (p.shortHeadlines || []).filter(h => h && h.trim());
+  const descriptions = (p.descriptions || []).filter(d => d && d.trim());
+  const bizName = p.businessName || domain;
+
+  if (pmaxFormat === 'search') {
+    // Search: long headline | short headline | description  (like a regular RSA but uses long headlines)
+    const lh = longHeadlines[pmaxLongOffset % (longHeadlines.length || 1)] || '';
+    const sh = shortHeadlines[pmaxShortOffset % (shortHeadlines.length || 1)] || '';
+    const desc = descriptions[pmaxDescOffset % (descriptions.length || 1)] || '';
+
+    // Build headline line: long headline + " | " + short headline (Google picks combos)
+    const headlineDisplay = lh + (sh ? ' | ' + sh : '');
+
+    const faviconLetter = domain.charAt(0).toUpperCase();
+
+    document.getElementById('pmaxGooglePreview').style.display = '';
+    document.getElementById('pmaxDisplayPreview').style.display = 'none';
+    document.getElementById('pmaxPreviewHint').textContent =
+      'PMAX Search: long headline + short headline + description. Google picks the best combination from your asset group.';
+
+    document.getElementById('pmaxGooglePreview').innerHTML =
+      '<div class="google-preview">' +
+        '<div class="gp-top">' +
+          '<div class="gp-favicon" id="pmaxFavicon">' + faviconLetter + '</div>' +
+          '<div class="gp-domain-block">' +
+            '<div class="gp-domain">' + escHtml(domain) + '</div>' +
+            '<div class="gp-url">' + escHtml(url.replace(/^https?:\/\//, '')) + '</div>' +
+          '</div>' +
+          '<span class="gp-sponsored">Sponsored</span>' +
+        '</div>' +
+        '<div class="gp-headline">' + escHtml(headlineDisplay) + '</div>' +
+        '<div class="gp-description">' + escHtml(desc) + '</div>' +
+      '</div>';
+
+    // Try favicon
+    const img = new Image();
+    img.onload = function() {
+      const el = document.getElementById('pmaxFavicon');
+      if (el) el.innerHTML = '<img src="' + img.src + '" />';
+    };
+    img.src = 'https://www.google.com/s2/favicons?domain=' + domain + '&sz=32';
+
+  } else {
+    // Display format
+    const sh = shortHeadlines[pmaxShortOffset % (shortHeadlines.length || 1)] || '';
+    const desc = descriptions[pmaxDescOffset % (descriptions.length || 1)] || '';
+
+    document.getElementById('pmaxGooglePreview').style.display = 'none';
+    document.getElementById('pmaxDisplayPreview').style.display = '';
+    document.getElementById('pmaxPreviewHint').textContent =
+      'PMAX Display: short headline + description shown in a banner. Google auto-generates the creative layout.';
+
+    document.getElementById('pmaxDisplayPreview').innerHTML =
+      '<div class="pmax-display-card">' +
+        '<div class="pmax-display-img">[ Your image asset ]</div>' +
+        '<div class="pmax-display-body">' +
+          '<div class="pmax-display-bizname">' + escHtml(bizName) + '</div>' +
+          '<div class="pmax-display-headline">' + escHtml(sh) + '</div>' +
+          '<div class="pmax-display-desc">' + escHtml(desc) + '</div>' +
+          '<div class="pmax-display-cta">Learn more</div>' +
+          '<div class="pmax-display-sponsored">Ad · ' + escHtml(domain) + '</div>' +
+        '</div>' +
+      '</div>';
+  }
+}
+
+function shufflePmaxPreview() {
+  const p = generatedData && generatedData.pmax;
+  if (!p) return;
+  const lLen = (p.longHeadlines || []).filter(h => h).length || 1;
+  const sLen = (p.shortHeadlines || []).filter(h => h).length || 1;
+  const dLen = (p.descriptions || []).filter(d => d).length || 1;
+  pmaxLongOffset  = (pmaxLongOffset  + 1) % lLen;
+  pmaxShortOffset = (pmaxShortOffset + 1) % sLen;
+  pmaxDescOffset  = (pmaxDescOffset  + 1) % dLen;
+  drawPmaxPreview();
+}
+
+window.shufflePmaxPreview = shufflePmaxPreview;
+
+function pmaxFieldBlock(label, key, arr, max) {
+  return `
+    <div class="pmax-field">
+      <div class="pmax-field-header">
+        <span class="pmax-field-name">${label}</span>
+      </div>
+      <div class="items-list">
+        ${(arr || []).map((val, i) => `
+          <div class="pmax-item">
+            <input class="pmax-input" data-pmax="${key}" data-idx="${i}" value="${escHtml(val)}" oninput="window.updatePmaxArr(this, ${max})" maxlength="${max + 5}" />
+            ${charCountBadge(val, max)}
+          </div>
+        `).join('')}
+      </div>
+    </div>`;
+}
+
+function updateField(el) {
+  const i = parseInt(el.dataset.ad);
+  generatedData.searchAds[i][el.dataset.key] = el.value;
+  if (i === previewAdIndex) drawGooglePreview(generatedData.searchAds[i]);
+  // update char badge
+  const max = el.dataset.key.startsWith('h') ? 30 : 90;
+  const badge = el.previousElementSibling;
+  if (badge) {
+    const n = el.value.length;
+    badge.querySelector('.char-count') && (badge.querySelector('.char-count').outerHTML = `<span class="char-count ${n > max ? 'over' : 'ok'}">${n}/${max}</span>`);
+    badge.innerHTML = badge.innerHTML; // noop, update via label
+  }
+}
+
+function updatePmax(el) {
+  generatedData.pmax[el.dataset.pmax] = el.value;
+  drawPmaxPreview();
+}
+
+function updatePmaxArr(el, max) {
+  const key = el.dataset.pmax;
+  const idx = parseInt(el.dataset.idx);
+  generatedData.pmax[key][idx] = el.value;
+  drawPmaxPreview();
+  // update sibling badge
+  const badge = el.nextElementSibling;
+  if (badge) {
+    const n = el.value.length;
+    badge.className = 'char-count ' + (n > max ? 'over' : 'ok');
+    badge.textContent = `${n}/${max}`;
+  }
+}
+
+function exportExcel() {
+  if (!generatedData) return;
+  const wb = XLSX.utils.book_new();
+
+  // ---- Search Ads Sheet (Google Ads Editor format) ----
+  if (generatedData.searchAds && generatedData.searchAds.length) {
+    const searchHeaders = [
+      'Campaign', 'Ad group', 'Headline 1', 'Headline 2', 'Headline 3',
+      'Headline 4', 'Headline 5', 'Headline 6', 'Headline 7', 'Headline 8',
+      'Headline 9', 'Headline 10', 'Headline 11', 'Headline 12', 'Headline 13',
+      'Headline 14', 'Headline 15',
+      'Description 1', 'Description 2', 'Description 3', 'Description 4',
+      'Final URL', 'Ad type', 'Status'
+    ];
+
+    const url = document.getElementById('landingUrl').value.trim();
+    const searchRows = generatedData.searchAds.map((ad, i) => {
+      const row = { 
+        'Campaign': 'Campaign 1',
+        'Ad group': `Ad Group ${i+1}`,
+        'Headline 1': ad.headline1 || '',
+        'Headline 2': ad.headline2 || '',
+        'Headline 3': ad.headline3 || '',
+        'Headline 4': ad.headline4 || '',
+        'Headline 5': ad.headline5 || '',
+        'Headline 6': ad.headline6 || '',
+        'Headline 7': ad.headline7 || '',
+        'Headline 8': ad.headline8 || '',
+        'Headline 9': ad.headline9 || '',
+        'Headline 10': ad.headline10 || '',
+        'Headline 11': ad.headline11 || '',
+        'Headline 12': ad.headline12 || '',
+        'Headline 13': ad.headline13 || '',
+        'Headline 14': ad.headline14 || '',
+        'Headline 15': ad.headline15 || '',
+        'Description 1': ad.description1 || '',
+        'Description 2': ad.description2 || '',
+        'Description 3': ad.description3 || '',
+        'Description 4': ad.description4 || '',
+        'Final URL': url,
+        'Ad type': 'Responsive search ad',
+        'Status': 'Paused'
+      };
+      return row;
+    });
+
+    const searchWs = XLSX.utils.json_to_sheet(searchRows, { header: searchHeaders });
+    // Column widths
+    searchWs['!cols'] = searchHeaders.map(h => ({ wch: h.startsWith('Headline') ? 18 : h === 'Final URL' ? 40 : 22 }));
+    XLSX.utils.book_append_sheet(wb, searchWs, 'Search Ads');
+  }
+
+  // ---- PMAX Sheet ----
+  if (generatedData.pmax) {
+    const p = generatedData.pmax;
+    const url = document.getElementById('landingUrl').value.trim();
+
+    const pmaxHeaders = [
+      'Campaign', 'Asset group name',
+      'Short headline 1', 'Short headline 2', 'Short headline 3', 'Short headline 4', 'Short headline 5',
+      'Short headline 6', 'Short headline 7', 'Short headline 8', 'Short headline 9', 'Short headline 10',
+      'Short headline 11', 'Short headline 12', 'Short headline 13', 'Short headline 14', 'Short headline 15',
+      'Long headline 1', 'Long headline 2', 'Long headline 3', 'Long headline 4', 'Long headline 5',
+      'Description 1', 'Description 2', 'Description 3', 'Description 4', 'Description 5',
+      'Business name', 'Final URL', 'Status'
+    ];
+
+    const pmaxRow = {
+      'Campaign': 'PMAX Campaign 1',
+      'Asset group name': 'Asset Group 1',
+      'Short headline 1': (p.shortHeadlines || [])[0] || '',
+      'Short headline 2': (p.shortHeadlines || [])[1] || '',
+      'Short headline 3': (p.shortHeadlines || [])[2] || '',
+      'Short headline 4': (p.shortHeadlines || [])[3] || '',
+      'Short headline 5': (p.shortHeadlines || [])[4] || '',
+      'Short headline 6': (p.shortHeadlines || [])[5] || '',
+      'Short headline 7': (p.shortHeadlines || [])[6] || '',
+      'Short headline 8': (p.shortHeadlines || [])[7] || '',
+      'Short headline 9': (p.shortHeadlines || [])[8] || '',
+      'Short headline 10': (p.shortHeadlines || [])[9] || '',
+      'Short headline 11': (p.shortHeadlines || [])[10] || '',
+      'Short headline 12': (p.shortHeadlines || [])[11] || '',
+      'Short headline 13': (p.shortHeadlines || [])[12] || '',
+      'Short headline 14': (p.shortHeadlines || [])[13] || '',
+      'Short headline 15': (p.shortHeadlines || [])[14] || '',
+      'Long headline 1': (p.longHeadlines || [])[0] || '',
+      'Long headline 2': (p.longHeadlines || [])[1] || '',
+      'Long headline 3': (p.longHeadlines || [])[2] || '',
+      'Long headline 4': (p.longHeadlines || [])[3] || '',
+      'Long headline 5': (p.longHeadlines || [])[4] || '',
+      'Description 1': (p.descriptions || [])[0] || '',
+      'Description 2': (p.descriptions || [])[1] || '',
+      'Description 3': (p.descriptions || [])[2] || '',
+      'Description 4': (p.descriptions || [])[3] || '',
+      'Description 5': (p.descriptions || [])[4] || '',
+      'Business name': p.businessName || '',
+      'Final URL': url,
+      'Status': 'Paused'
+    };
+
+    const pmaxWs = XLSX.utils.json_to_sheet([pmaxRow], { header: pmaxHeaders });
+    pmaxWs['!cols'] = pmaxHeaders.map(() => ({ wch: 24 }));
+    XLSX.utils.book_append_sheet(wb, pmaxWs, 'PMAX');
+  }
+
+  // ---- USPs reference sheet ----
+  if (usps.length) {
+    const uspRows = usps.map(u => ({ 'Unique Selling Point': u }));
+    const uspWs = XLSX.utils.json_to_sheet(uspRows);
+    uspWs['!cols'] = [{ wch: 50 }];
+    XLSX.utils.book_append_sheet(wb, uspWs, 'USPs');
+  }
+
+  XLSX.writeFile(wb, 'google-ads-copy.xlsx');
+}
+
+function exportClientReview() {
+  if (!generatedData) return;
+  const wb = XLSX.utils.book_new();
+  const url = document.getElementById('landingUrl').value.trim();
+
+  // Helper: add a styled sheet with char-count formulas
+  // Layout: Section header | Field label | Text | Chars (LEN formula) | Limit | Status formula
+  function makeReviewSheet(rows) {
+    // rows = [{type, label, text, limit}]  type: 'header'|'field'
+    const wsData = [
+      ['Section', 'Field', 'Ad Copy Text', 'Characters', 'Limit', 'Status']
+    ];
+    const formulaRows = []; // track which Excel row indices get LEN formulas
+
+    rows.forEach(r => {
+      if (r.type === 'header') {
+        wsData.push([r.label, '', '', '', '', '']);
+      } else {
+        const excelRow = wsData.length + 1; // 1-indexed, +1 for header
+        wsData.push([r.section, r.label, r.text, { f: `LEN(C${excelRow})` }, r.limit, { f: `IF(D${excelRow}>E${excelRow},"⚠ Over limit","✓ OK")` }]);
+        formulaRows.push(excelRow);
+      }
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    // Column widths
+    ws['!cols'] = [
+      { wch: 20 },  // Section
+      { wch: 22 },  // Field
+      { wch: 55 },  // Text
+      { wch: 12 },  // Characters
+      { wch: 8 },   // Limit
+      { wch: 14 },  // Status
+    ];
+
+    return ws;
+  }
+
+  // Build Search rows
+  if (generatedData.searchAds && generatedData.searchAds.length) {
+    const rows = [];
+    generatedData.searchAds.forEach((ad, i) => {
+      const sec = `Ad ${i+1}`;
+      for (let h = 1; h <= 15; h++) {
+        rows.push({ type: 'field', section: sec, label: `Headline ${h}`, text: ad[`headline${h}`] || '', limit: 30 });
+      }
+      for (let d = 1; d <= 4; d++) {
+        rows.push({ type: 'field', section: sec, label: `Description ${d}`, text: ad[`description${d}`] || '', limit: 90 });
+      }
+    });
+    const ws = makeReviewSheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, 'Search Ads – Client Review');
+  }
+
+  // Build PMAX rows
+  if (generatedData.pmax) {
+    const p = generatedData.pmax;
+    const rows = [];
+    const sh = p.shortHeadlines || [];
+    const lh = p.longHeadlines || [];
+    const desc = p.descriptions || [];
+
+    sh.forEach((t, i) => rows.push({ type: 'field', section: 'PMAX', label: `Short headline ${i+1}`, text: t, limit: 30 }));
+    lh.forEach((t, i) => rows.push({ type: 'field', section: 'PMAX', label: `Long headline ${i+1}`, text: t, limit: 90 }));
+    desc.forEach((t, i) => rows.push({ type: 'field', section: 'PMAX', label: `Description ${i+1}`, text: t, limit: 90 }));
+    rows.push({ type: 'field', section: 'PMAX', label: 'Business name', text: p.businessName || '', limit: 25 });
+
+    const ws = makeReviewSheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, 'PMAX – Client Review');
+  }
+
+  // Info sheet
+  const infoData = [
+    ['Google Ads Copy – Client Review'],
+    ['Landing page', url],
+    ['Generated', new Date().toLocaleDateString()],
+    [],
+    ['Instructions for client:'],
+    ['• Review each ad text in the "Ad Copy Text" column'],
+    ['• "Characters" shows the exact character count (calculated automatically)'],
+    ['• "Limit" shows the maximum allowed characters for that field'],
+    ['• "Status" shows ✓ OK if within limit, ⚠ Over limit if too long'],
+    ['• Please leave feedback directly in this file'],
+  ];
+  const infoWs = XLSX.utils.aoa_to_sheet(infoData);
+  infoWs['!cols'] = [{ wch: 30 }, { wch: 60 }];
+  XLSX.utils.book_append_sheet(wb, infoWs, 'Instructions');
+
+  XLSX.writeFile(wb, 'google-ads-client-review.xlsx');
+}
+
+// ── Share & Client Review Logic ──
+
+function buildShareUrl(approvals) {
+  const payload = {
+    ads: generatedData,
+    url: document.getElementById('landingUrl').value.trim(),
+    approvals: approvals || {}
+  };
+  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  const base = window.location.href.split('?')[0].split('#')[0];
+  return base + '#review=' + encoded;
+}
+
+function openShareModal() {
+  if (!generatedData) return;
+  const link = buildShareUrl({});
+  document.getElementById('shareLinkInput').value = link;
+  const modal = document.getElementById('shareModal');
+  modal.style.display = 'flex';
+}
+
+function closeShareModal() {
+  document.getElementById('shareModal').style.display = 'none';
+}
+
+function copyShareLink() {
+  const input = document.getElementById('shareLinkInput');
+  navigator.clipboard.writeText(input.value).then(() => showToast('Link copied!'));
+}
+
+function showToast(msg) {
+  const t = document.getElementById('copiedToast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── Client Review View ──
+let clientApprovals = {};  // key: "search-0-headline1" or "pmax-shortHeadlines-3"
+let clientData = null;
+
+function loadClientReview() {
+  // Support both #review= (hash, new) and ?review= (query param, legacy)
+  let raw = null;
+  const hashMatch = window.location.hash.match(/^#review=(.+)$/);
+  if (hashMatch) { raw = hashMatch[1]; }
+  if (!raw) { const params = new URLSearchParams(window.location.search); raw = params.get('review'); }
+  if (!raw) return false;
+
+  try {
+    const payload = JSON.parse(decodeURIComponent(escape(atob(raw))));
+    clientData = payload.ads;
+    clientApprovals = payload.approvals || {};
+    generatedData = clientData;
+
+    document.getElementById('clientReviewView').style.display = 'block';
+    document.querySelector('main').style.display = 'none';
+
+    // Restore landing URL so favicon, export and all functions work correctly
+    if (payload.url) {
+      const urlInput = document.getElementById('landingUrl');
+      if (urlInput) urlInput.value = payload.url;
+    }
+    renderClientReview();
+    initClientPreviews();
+    return true;
+  } catch(e) {
+    console.error('Failed to load review data:', e);
+    return false;
+  }
+}
+
+// ── Client Review Preview ──
+let crPreviewAdIndex = 0;
+let crPreviewHOffset = 0;
+let crPreviewDOffset = 0;
+let crPmaxFormat = 'search';
+let crPmaxLongOffset = 0;
+let crPmaxShortOffset = 0;
+let crPmaxDescOffset = 0;
+
+function initClientPreviews() {
+  const data = clientData;
+  if (!data) return;
+
+  const previewSection = document.getElementById('crPreviewSection');
+  previewSection.style.display = '';
+
+  // Search preview
+  if (data.searchAds && data.searchAds.length) {
+    const wrap = document.getElementById('crSearchPreviewWrap');
+    wrap.style.display = '';
+
+    const tabs = document.getElementById('crPreviewTabs');
+    tabs.innerHTML = data.searchAds.map((_, i) =>
+      '<button class="preview-tab' + (i === crPreviewAdIndex ? ' active' : '') + '" data-cidx="' + i + '">Variation ' + (i+1) + '</button>'
+    ).join('');
+    tabs.querySelectorAll('.preview-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        crPreviewAdIndex = parseInt(btn.dataset.cidx);
+        crPreviewHOffset = 0;
+        crPreviewDOffset = 0;
+        tabs.querySelectorAll('.preview-tab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        drawCrSearchPreview();
+      });
+    });
+
+    document.getElementById('crShuffleBtn').addEventListener('click', () => {
+      crPreviewHOffset = (crPreviewHOffset + 3) % 15;
+      crPreviewDOffset = (crPreviewDOffset + 1) % 4;
+      drawCrSearchPreview();
+    });
+
+    drawCrSearchPreview();
+  }
+
+  // PMAX preview
+  if (data.pmax) {
+    document.getElementById('crPmaxPreviewWrap').style.display = '';
+    document.getElementById('crPmaxFmtSearch').addEventListener('click', () => {
+      crPmaxFormat = 'search';
+      document.getElementById('crPmaxFmtSearch').classList.add('active');
+      document.getElementById('crPmaxFmtDisplay').classList.remove('active');
+      drawCrPmaxPreview();
+    });
+    document.getElementById('crPmaxFmtDisplay').addEventListener('click', () => {
+      crPmaxFormat = 'display';
+      document.getElementById('crPmaxFmtDisplay').classList.add('active');
+      document.getElementById('crPmaxFmtSearch').classList.remove('active');
+      drawCrPmaxPreview();
+    });
+    document.getElementById('crPmaxShuffleBtn').addEventListener('click', () => {
+      const p = clientData.pmax;
+      crPmaxLongOffset  = (crPmaxLongOffset  + 1) % Math.max((p.longHeadlines||[]).filter(h=>h).length, 1);
+      crPmaxShortOffset = (crPmaxShortOffset + 1) % Math.max((p.shortHeadlines||[]).filter(h=>h).length, 1);
+      crPmaxDescOffset  = (crPmaxDescOffset  + 1) % Math.max((p.descriptions||[]).filter(d=>d).length, 1);
+      drawCrPmaxPreview();
+    });
+    drawCrPmaxPreview();
+  }
+}
+
+function drawCrSearchPreview() {
+  const ad = clientData.searchAds[crPreviewAdIndex];
+  const url = (clientData.url) || 'https://example.com';
+  let domain = '', path = '';
+  try { const u = new URL(url); domain = u.hostname.replace('www.',''); path = u.pathname !== '/' ? u.pathname : ''; } catch(e) { domain = url; }
+
+  const hKeys = ['headline1','headline2','headline3','headline4','headline5','headline6',
+                 'headline7','headline8','headline9','headline10','headline11','headline12',
+                 'headline13','headline14','headline15'].filter(k => ad[k] && ad[k].trim());
+  const dKeys = ['description1','description2','description3','description4'].filter(k => ad[k] && ad[k].trim());
+
+  const h1 = hKeys[(crPreviewHOffset) % hKeys.length];
+  const h2 = hKeys[(crPreviewHOffset + 1) % hKeys.length];
+  const h3 = hKeys[(crPreviewHOffset + 2) % hKeys.length];
+  const d1 = dKeys[(crPreviewDOffset) % dKeys.length];
+  const d2 = dKeys[(crPreviewDOffset + 1) % dKeys.length];
+  const headlineText = [ad[h1], ad[h2], ad[h3]].filter(Boolean).join(' | ');
+  const descText = [ad[d1], d2 !== d1 ? ad[d2] : ''].filter(Boolean).join(' ');
+  const faviconLetter = domain.charAt(0).toUpperCase();
+
+  document.getElementById('crGooglePreview').innerHTML =
+    '<div class="gp-top">' +
+      '<div class="gp-favicon" id="crGpFavicon">' + faviconLetter + '</div>' +
+      '<div class="gp-domain-block">' +
+        '<div class="gp-domain">' + escHtml(domain) + '</div>' +
+        '<div class="gp-url">' + escHtml(url.replace(/^https?:\/\//, '')) + '</div>' +
+      '</div>' +
+      '<span class="gp-sponsored">Sponsored</span>' +
+    '</div>' +
+    '<div class="gp-headline">' + escHtml(headlineText) + '</div>' +
+    '<div class="gp-description">' + escHtml(descText) + '</div>';
+
+  const img = new Image();
+  img.onload = function() { const el = document.getElementById('crGpFavicon'); if (el) el.innerHTML = '<img src="' + img.src + '" />'; };
+  img.src = 'https://www.google.com/s2/favicons?domain=' + domain + '&sz=32';
+}
+
+function drawCrPmaxPreview() {
+  const p = clientData.pmax;
+  const url = (clientData.url) || 'https://example.com';
+  let domain = '';
+  try { domain = new URL(url).hostname.replace('www.', ''); } catch(e) { domain = url; }
+
+  const longHeadlines = (p.longHeadlines || []).filter(h => h && h.trim());
+  const shortHeadlines = (p.shortHeadlines || []).filter(h => h && h.trim());
+  const descriptions = (p.descriptions || []).filter(d => d && d.trim());
+  const bizName = p.businessName || domain;
+
+  if (crPmaxFormat === 'search') {
+    const lh = longHeadlines[crPmaxLongOffset % (longHeadlines.length || 1)] || '';
+    const sh = shortHeadlines[crPmaxShortOffset % (shortHeadlines.length || 1)] || '';
+    const desc = descriptions[crPmaxDescOffset % (descriptions.length || 1)] || '';
+    const headlineDisplay = lh + (sh ? ' | ' + sh : '');
+    const faviconLetter = domain.charAt(0).toUpperCase();
+
+    document.getElementById('crPmaxGooglePreview').style.display = '';
+    document.getElementById('crPmaxDisplayPreview').style.display = 'none';
+    document.getElementById('crPmaxPreviewHint').textContent = 'PMAX Search: long headline + short headline + description. Google picks the best combination.';
+
+    document.getElementById('crPmaxGooglePreview').innerHTML =
+      '<div class="google-preview">' +
+        '<div class="gp-top">' +
+          '<div class="gp-favicon" id="crPmaxFavicon">' + faviconLetter + '</div>' +
+          '<div class="gp-domain-block">' +
+            '<div class="gp-domain">' + escHtml(domain) + '</div>' +
+            '<div class="gp-url">' + escHtml(url.replace(/^https?:\/\//, '')) + '</div>' +
+          '</div>' +
+          '<span class="gp-sponsored">Sponsored</span>' +
+        '</div>' +
+        '<div class="gp-headline">' + escHtml(headlineDisplay) + '</div>' +
+        '<div class="gp-description">' + escHtml(desc) + '</div>' +
+      '</div>';
+
+    const img = new Image();
+    img.onload = function() { const el = document.getElementById('crPmaxFavicon'); if (el) el.innerHTML = '<img src="' + img.src + '" />'; };
+    img.src = 'https://www.google.com/s2/favicons?domain=' + domain + '&sz=32';
+
+  } else {
+    const sh = shortHeadlines[crPmaxShortOffset % (shortHeadlines.length || 1)] || '';
+    const desc = descriptions[crPmaxDescOffset % (descriptions.length || 1)] || '';
+    document.getElementById('crPmaxGooglePreview').style.display = 'none';
+    document.getElementById('crPmaxDisplayPreview').style.display = '';
+    document.getElementById('crPmaxPreviewHint').textContent = 'PMAX Display: short headline + description shown in a banner. Google auto-generates the creative layout.';
+    document.getElementById('crPmaxDisplayPreview').innerHTML =
+      '<div class="pmax-display-card">' +
+        '<div class="pmax-display-img">[ Your image asset ]</div>' +
+        '<div class="pmax-display-body">' +
+          '<div class="pmax-display-bizname">' + escHtml(bizName) + '</div>' +
+          '<div class="pmax-display-headline">' + escHtml(sh) + '</div>' +
+          '<div class="pmax-display-desc">' + escHtml(desc) + '</div>' +
+          '<div class="pmax-display-cta">Learn more</div>' +
+          '<div class="pmax-display-sponsored">Ad · ' + escHtml(domain) + '</div>' +
+        '</div>' +
+      '</div>';
+  }
+}
+
+function renderClientReview() {
+  const container = document.getElementById('clientReviewContent');
+  let html = '';
+
+  // Search ads
+  if (clientData.searchAds && clientData.searchAds.length) {
+    clientData.searchAds.forEach((ad, adIdx) => {
+      html += '<div class="cr-section">';
+      html += '<div class="cr-section-header"><span style="background:#2563eb;color:white;padding:2px 8px;border-radius:4px;font-size:10px;">SEARCH</span> Variation ' + (adIdx+1) + '</div>';
+
+      const hKeys = ['headline1','headline2','headline3','headline4','headline5','headline6','headline7',
+                     'headline8','headline9','headline10','headline11','headline12','headline13','headline14','headline15'];
+      const dKeys = ['description1','description2','description3','description4'];
+
+      hKeys.forEach((k, ki) => {
+        const rowKey = 'search-' + adIdx + '-' + k;
+        const isApproved = !!clientApprovals[rowKey];
+        const val = ad[k] || '';
+        html += crRow(rowKey, 'Headline ' + (ki+1), val, 30, isApproved);
+      });
+      dKeys.forEach((k, di) => {
+        const rowKey = 'search-' + adIdx + '-' + k;
+        const isApproved = !!clientApprovals[rowKey];
+        const val = ad[k] || '';
+        html += crRow(rowKey, 'Description ' + (di+1), val, 90, isApproved);
+      });
+
+      html += '</div>';
+    });
+  }
+
+  // PMAX
+  if (clientData.pmax) {
+    const p = clientData.pmax;
+    html += '<div class="cr-section">';
+    html += '<div class="cr-section-header"><span style="background:#7c3aed;color:white;padding:2px 8px;border-radius:4px;font-size:10px;">PMAX</span> Asset Group</div>';
+
+    (p.shortHeadlines||[]).forEach((v,i) => {
+      const k = 'pmax-short-' + i;
+      html += crRow(k, 'Short headline ' + (i+1), v, 30, !!clientApprovals[k]);
+    });
+    (p.longHeadlines||[]).forEach((v,i) => {
+      const k = 'pmax-long-' + i;
+      html += crRow(k, 'Long headline ' + (i+1), v, 90, !!clientApprovals[k]);
+    });
+    (p.descriptions||[]).forEach((v,i) => {
+      const k = 'pmax-desc-' + i;
+      html += crRow(k, 'Description ' + (i+1), v, 90, !!clientApprovals[k]);
+    });
+    if (p.businessName) {
+      const k = 'pmax-bizname';
+      html += crRow(k, 'Business name', p.businessName, 25, !!clientApprovals[k]);
+    }
+
+    html += '</div>';
+  }
+
+  container.innerHTML = html;
+
+  // Wire inputs and approve buttons
+  container.querySelectorAll('.cr-input').forEach(input => {
+    input.addEventListener('input', function() {
+      const row = this.closest('.cr-row');
+      const k = row.dataset.key;
+      // Update char counter
+      const charEl = row.querySelector('.cr-char');
+      const max = parseInt(row.dataset.max);
+      if (charEl) {
+        charEl.textContent = this.value.length + '/' + max;
+        charEl.className = 'cr-char' + (this.value.length > max ? ' over' : '');
+      }
+      // Un-approve if edited
+      if (clientApprovals[k]) {
+        delete clientApprovals[k];
+        row.classList.remove('approved');
+        const btn = row.querySelector('.cr-approve-btn');
+        if (btn) { btn.textContent = 'Approve'; btn.classList.remove('approved'); }
+      }
+    });
+  });
+
+  container.querySelectorAll('.cr-approve-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const row = this.closest('.cr-row');
+      const k = row.dataset.key;
+      const input = row.querySelector('.cr-input');
+      const currentVal = input ? input.value : '';
+
+      if (clientApprovals[k]) {
+        // Unapprove
+        delete clientApprovals[k];
+        row.classList.remove('approved');
+        this.textContent = 'Approve';
+        this.classList.remove('approved');
+      } else {
+        // Approve — save current text
+        clientApprovals[k] = currentVal;
+        row.classList.add('approved');
+        this.textContent = '✓ Approved';
+        this.classList.add('approved');
+      }
+      updateApprovalProgress();
+    });
+  });
+
+  updateApprovalProgress();
+}
+
+function crRow(key, label, value, max, approved) {
+  const charClass = value.length > max ? ' over' : '';
+  return '<div class="cr-row' + (approved ? ' approved' : '') + '" data-key="' + key + '" data-max="' + max + '">' +
+    '<div class="cr-label">' + label + '</div>' +
+    '<div style="display:flex;align-items:center;gap:6px;min-width:0;">' +
+      '<input class="cr-input" value="' + escHtml(value) + '" maxlength="' + (max+5) + '" />' +
+      '<span class="cr-char' + charClass + '">' + value.length + '/' + max + '</span>' +
+    '</div>' +
+    '<button class="cr-approve-btn' + (approved ? ' approved' : '') + '">' + (approved ? '✓ Approved' : 'Approve') + '</button>' +
+  '</div>';
+}
+
+function updateApprovalProgress() {
+  const rows = document.querySelectorAll('.cr-row');
+  const total = rows.length;
+  const approved = Object.keys(clientApprovals).length;
+  document.getElementById('approvalProgress').textContent = approved + ' of ' + total + ' items approved';
+  const btn = document.getElementById('sendApprovalBtn');
+  if (btn) btn.textContent = approved === total
+    ? '✓ All approved — copy link to send back'
+    : '↗ Copy approval link (' + approved + '/' + total + ' approved)';
+}
+
+function sendApproval() {
+  // Collect latest edited values back into approvals
+  document.querySelectorAll('.cr-row').forEach(row => {
+    const k = row.dataset.key;
+    const input = row.querySelector('.cr-input');
+    if (input && clientApprovals[k] !== undefined) {
+      clientApprovals[k] = input.value;
+    }
+  });
+
+  const payload = {
+    ads: clientData,
+    url: '',
+    approvals: clientApprovals
+  };
+  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  const link = window.location.href.split('?')[0].split('#')[0] + '#review=' + encoded;
+  navigator.clipboard.writeText(link).then(() => showToast('Approval link copied! Send it back to your agency.'));
+}
+
+window.sendApproval = sendApproval;
+
+// ── Wire all event listeners here to avoid inline onclick scope issues
+document.addEventListener('DOMContentLoaded', function() {
+  const bind = (id, fn) => { const el = document.getElementById(id); if (el) el.addEventListener('click', fn); };
+  bind('addUspBtn',      () => addUsp());
+  bind('tabSearch',      () => setTab('search'));
+  bind('tabPmax',        () => setTab('pmax'));
+  bind('tabBoth',        () => setTab('both'));
+  bind('varMinus',       () => changeVariations(-1));
+  bind('varPlus',        () => changeVariations(1));
+  bind('generateBtn',    () => generate());
+  bind('regenerateBtn',  () => generate());
+  bind('exportBtn',      () => exportExcel());
+  bind('exportClientBtn',() => exportClientReview());
+  bind('shuffleBtn',        () => shufflePreviewHeadlines());
+  bind('pmaxShuffleBtn',    () => shufflePmaxPreview());
+  bind('pmaxFormatSearch',  () => {
+    pmaxFormat = 'search';
+    document.getElementById('pmaxFormatSearch').classList.add('active');
+    document.getElementById('pmaxFormatDisplay').classList.remove('active');
+    drawPmaxPreview();
+  });
+  bind('pmaxFormatDisplay', () => {
+    pmaxFormat = 'display';
+    document.getElementById('pmaxFormatDisplay').classList.add('active');
+    document.getElementById('pmaxFormatSearch').classList.remove('active');
+    drawPmaxPreview();
+  });
+  bind('shareBtn',          () => openShareModal());
+  bind('copyLinkBtn',       () => copyShareLink());
+  bind('closeModalBtn',     () => closeShareModal());
+  bind('sendApprovalBtn',   () => sendApproval());
+});
+
+// On page load: check if this is a client review link
+document.addEventListener('DOMContentLoaded', function() {
+  loadClientReview();
+});
+
+// Expose functions that are called dynamically (e.g. removeUsp in rendered HTML)
+window.removeUsp = removeUsp;
+
+// Close share modal on backdrop click
+document.getElementById('shareModal').addEventListener('click', function(e) {
+  if (e.target === this) closeShareModal();
+});
+window.updateField = updateField;
+window.updatePmax = updatePmax;
+window.updatePmaxArr = updatePmaxArr;
+
+</script>
+<div class="copied-toast" id="copiedToast">Link copied!</div>
+</body>
+</html>
